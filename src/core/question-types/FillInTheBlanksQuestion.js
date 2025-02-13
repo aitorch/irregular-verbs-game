@@ -28,7 +28,7 @@ export class FillInTheBlanksQuestion {
       } else {
         elements.push({
           type: 'input',
-          placeholder: `${form} form`,
+          placeholder: `${form}`,
           expected: verb[`${form}Key`] || verb[form],
           answerIndex: answerIndex++
         });
