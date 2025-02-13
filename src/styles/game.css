@@ -1,0 +1,60 @@
+  .game-container {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 20px;
+    border-radius: 15px;
+    background: #f0f8ff;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .phase-start-screen {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .phase-start-screen h2 {
+    color: #333;
+    margin-bottom: 20px;
+  }
+
+  .phase-start-screen ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .phase-start-screen li {
+    font-size: 18px;
+    margin: 10px 0;
+    color: #555;
+  }
+
+  .verb-emoji {
+    font-size: 3rem;
+    margin: 1rem;
+  }
+
+  .input-field {
+    padding: 10px;
+    font-size: 16px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    margin: 5px;
+  }
+
+  button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+  }
+
+  button:hover {
+    background: #45a049;
+  }
