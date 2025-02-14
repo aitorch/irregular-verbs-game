@@ -6,7 +6,12 @@ import resolve from '@rollup/plugin-node-resolve';
 import livereload from 'rollup-plugin-livereload';
 import css from 'rollup-plugin-css-only';
 import replace from '@rollup/plugin-replace';
-import copy from 'rollup-plugin-copy'; // Add this plugin
+import copy from 'rollup-plugin-copy';
+import dotenv from 'dotenv';
+import fs from 'fs'; // Add this to read/write files
+
+// Load environment variables from .env file
+dotenv.config();
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -70,19 +75,26 @@ export default {
     }),
     commonjs(),
 
-    // Copy and process index.html
-    copy({
-      targets: [
-        {
-          src: 'public/index.html',
-          dest: 'public',
-          transform: (contents) =>
-            contents
-              .toString()
-              .replace(/%BASE_PATH%/g, process.env.BASE_PATH || '/'),
-        },
-      ],
-    }),
+    // Generate index.html from the template
+    {
+      name: 'generate-index-html',
+      writeBundle() {
+        const templatePath = 'public/index.template.html';
+        const outputPath = 'public/index.html';
+
+        // Read the template file
+        const template = fs.readFileSync(templatePath, 'utf8');
+
+        // Replace placeholders with environment variables
+        const finalHtml = template.replace(
+          /%BASE_PATH%/g,
+          process.env.BASE_PATH || '/'
+        );
+
+        // Write the final index.html file
+        fs.writeFileSync(outputPath, finalHtml, 'utf8');
+      },
+    },
 
     // In dev mode, call `npm run start` once
     // the bundle has been generated
