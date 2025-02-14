@@ -6,12 +6,16 @@ import resolve from '@rollup/plugin-node-resolve';
 import livereload from 'rollup-plugin-livereload';
 import css from 'rollup-plugin-css-only';
 import replace from '@rollup/plugin-replace';
-import copy from 'rollup-plugin-copy';
 import dotenv from 'dotenv';
-import fs from 'fs'; // Add this to read/write files
+import fs from 'fs';
 
-// Load environment variables from .env file
-dotenv.config();
+// Determine the environment
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Load the correct .env file
+dotenv.config({
+  path: isProduction ? '.env.production' : '.env',
+});
 
 const production = !process.env.ROLLUP_WATCH;
 
