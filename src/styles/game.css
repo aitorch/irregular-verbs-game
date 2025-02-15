@@ -1,9 +1,10 @@
 /* Ensure html and body take up full height */
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow: auto; /* Allow scrolling if content overflows */
+  overflow: auto;
 }
 
 /* Global Styles */
@@ -24,8 +25,69 @@ body {
   max-width: 90%;
   width: 500px;
   text-align: center;
-  overflow-y: auto; /* Allow scrolling inside the container if needed */
-  max-height: 90vh; /* Limit height to 90% of the viewport */
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+/* Phase Start Screen */
+.phase-start-screen {
+  background: white;
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+/* Verb Table - Fixed Alignment */
+.verb-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  table-layout: fixed; /* Ensures consistent column widths */
+}
+
+.verb-table th,
+.verb-table td {
+  padding: 0.75rem;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+.verb-table th {
+  background: #ff6f61;
+  color: white;
+  font-size: 1.1rem;
+}
+
+/* Removed flex from table rows */
+.verb-item {
+  /* Removed display:flex and related properties */
+}
+
+.emoji {
+  font-size: 1.5rem;
+  margin-right: 0.5rem;
+  vertical-align: middle; /* Aligns emoji with text */
+}
+
+.start-button {
+  background: #4caf50;
+  color: white;
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.start-button:hover {
+  background: #45a049;
 }
 
 /* Question Card */
@@ -56,12 +118,21 @@ body {
   font-size: 1.2rem;
 }
 
+.phase-indicator {
+  background: #4caf50;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 1rem;
+  margin-left: 1rem;
+}
+
 /* Question Content */
 .question-content {
   display: flex;
-  flex-wrap: nowrap; /* Prevent wrapping */
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 0.5rem; /* Space between elements */
+  gap: 0.5rem;
   justify-content: center;
   margin-bottom: 1.5rem;
 }
@@ -72,8 +143,8 @@ body {
   padding: 0.5rem;
   border: 2px solid #ccc;
   border-radius: 8px;
-  width: 100px; /* Fixed width for inputs */
-  max-width: 100px; /* Ensure inputs don't grow too large */
+  width: 100px;
+  max-width: 100px;
   transition: border-color 0.3s;
 }
 
@@ -82,14 +153,12 @@ body {
   outline: none;
 }
 
-/* Verb Text and Separators */
 .verb-text,
 .separator {
   font-size: 1.2rem;
-  white-space: nowrap; /* Prevent text from wrapping */
+  white-space: nowrap;
 }
 
-/* Submit Button */
 .submit-button {
   background: #ff6f61;
   color: white;
@@ -105,13 +174,12 @@ body {
   background: #ff4a3d;
 }
 
-/* Hint Box */
 .hint-box {
-  background: #fff3e0; /* Light orange background */
+  background: #fff3e0;
   padding: 1rem;
   border-radius: 10px;
   margin-top: 1rem;
-  border: 2px dashed #ff6f61; /* Dashed border for a playful look */
+  border: 2px dashed #ff6f61;
 }
 
 .hint-text {
@@ -120,54 +188,16 @@ body {
   font-weight: bold;
 }
 
-/* Hint Field (for input fields when hint is shown) */
 .hint-field {
-  background: #fff3e0; /* Light orange background */
-  border: 2px dashed #ff6f61; /* Dashed border */
-}
-
-/* Verb Table */
-.verb-table {
-  width: 100%;
-  border-collapse: collapse; /* Remove spacing between cells */
-  margin: 1rem 0;
-  background: white;
-  border-radius: 10px;
-  overflow: hidden; /* Ensure rounded corners are visible */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.verb-table th,
-.verb-table td {
-  padding: 0.75rem;
-  text-align: left;
-}
-
-.verb-table th {
-  background: #ff6f61; /* Header background color */
-  color: white;
-  font-size: 1.1rem;
-}
-
-.verb-table td {
-  border-bottom: 1px solid #eee; /* Light border between rows */
-  font-size: 1rem;
-}
-
-.verb-table tr:last-child td {
-  border-bottom: none; /* Remove border from last row */
-}
-
-.verb-table .emoji {
-  font-size: 1.5rem;
-  margin-right: 0.5rem;
+  background: #fff3e0;
+  border: 2px dashed #ff6f61;
 }
 
 /* Responsive Design */
 @media (max-width: 600px) {
   .game-container {
     padding: 1rem;
-    max-height: 95vh; /* Slightly taller on smaller screens */
+    max-height: 95vh;
   }
 
   .question-card {
@@ -175,11 +205,11 @@ body {
   }
 
   .question-content {
-    gap: 0.3rem; /* Reduce gap for smaller screens */
+    gap: 0.3rem;
   }
 
   .input-field {
-    width: 80px; /* Smaller width for mobile */
+    width: 80px;
     max-width: 80px;
     font-size: 0.9rem;
     padding: 0.4rem;
@@ -187,7 +217,7 @@ body {
 
   .verb-text,
   .separator {
-    font-size: 1rem; /* Smaller font size for mobile */
+    font-size: 1rem;
   }
 
   .submit-button {

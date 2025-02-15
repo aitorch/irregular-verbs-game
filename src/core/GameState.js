@@ -23,25 +23,41 @@ export class GameState {
   }
 
   getPhaseVerbs(allVerbs) {
-    const start = (this.currentPhase - 1) * 5;
-    return allVerbs
-      .slice(0, start + 10)
-      .map(verb => this.normalizeVerb(verb));
+    const newVerbsStart = (this.currentPhase - 1) * 5;
+    const newVerbsEnd = newVerbsStart + 5;
+    
+    // Get new verbs for this phase
+    const newVerbs = allVerbs.slice(newVerbsStart, newVerbsEnd);
+    
+    // Get 5 random verbs from previous phases
+    const previousVerbs = allVerbs.slice(0, newVerbsStart);
+    const reviewVerbs = this.getRandomVerbs(previousVerbs, 5);
+    
+    return [...newVerbs, ...reviewVerbs].map(verb => this.normalizeVerb(verb));
   }
 
-  progressPhase() {
-    this.currentPhase = Math.min(this.currentPhase + 1, 5); // Limit to 5 phases
-    this.save();
+  getRandomVerbs(verbsArray, count) {
+    return [...verbsArray]
+      .sort(() => 0.5 - Math.random())
+      .slice(0, count);
+  }
+
+  checkPhaseProgress(newScore) {
+    const requiredScore = this.currentPhase * 100;
+    if (newScore >= requiredScore) {
+      this.currentPhase++;
+      this.save();
+      return true;
+    }
+    return false;
   }
 
   normalizeVerb(verb) {
     return {
       ...verb,
-      // Internal processing versions
       infinitiveKey: verb.infinitive.replace(/ /g, '_'),
       pastKey: verb.past.replace(/ /g, '_'),
       participleKey: verb.participle.replace(/ /g, '_'),
-      // Original display versions
       displayInfinitive: verb.infinitive,
       displayPast: verb.past,
       displayParticiple: verb.participle

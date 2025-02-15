@@ -17,14 +17,13 @@
   // Initialize the game properly
   function initializeGame() {
     phaseVerbs = gameState.getPhaseVerbs(verbs);
-    gameStarted = false;
+    gameStarted = false; // Ensure the start phase screen is shown
     score = gameState.score;
   }
 
   function startPhase() {
-    initializeGame(); // Initialize first
-    gameStarted = true;
-    nextQuestion(); // Then generate the first question
+    gameStarted = true; // Hide the start phase screen
+    nextQuestion(); // Generate the first question
   }
 
   function nextQuestion() {
@@ -49,7 +48,7 @@
       return;
     }
 
-    const normalizedAnswers = userAnswers.map((a) => a.trim().toLowerCase());
+    const normalizedAnswers = userAnswers.map((a) => a.trim().toLowerCase().replace(/ /g, '_'));
     console.log("Normalized user answers:", normalizedAnswers); // Debug log
 
     const isCorrect = questionManager.checkAnswer(
@@ -60,8 +59,14 @@
     if (isCorrect) {
       score += calculateScore();
       gameState.score = score;
-      gameState.save();
-      nextQuestion();
+
+      // Check if we should progress to the next phase
+      const shouldProgress = gameState.checkPhaseProgress(score);
+      if (shouldProgress) {
+        initializeGame(); // Reset for the next phase
+      } else {
+        nextQuestion(); // Continue with the current phase
+      }
     } else {
       showHint = attempts >= 3;
     }
@@ -108,46 +113,43 @@
       </button>
     </div>
   {:else if currentQuestion}
-  <div class="question-card">
-    <div class="verb-header">
-      <div class="verb-emoji">{currentQuestion.verb.emoji}</div>
-      <div class="score-badge">⭐ Score: {score}</div>
-    </div>
-  
-    <div class="question-content">
-      {#each currentQuestion.template as part, index}
-        {#if part.type === "input"}
-          <input
-            class="input-field {showHint ? 'hint-field' : ''}"
-            bind:value={userAnswers[part.answerIndex]}
-            placeholder={part.placeholder}
-          />
-        {:else if part.type === "text"}
-          <span class="verb-text">{part.value}</span>
-        {:else if part.type === "separator"}
-          <span class="separator">{part.value}</span>
-        {/if}
-      {/each}
-    </div>
-  
-    {#if showHint}
-      <div class="hint-box">
-        {#each questionManager.getHint(attempts, currentQuestion) as hint, i}
-          <span class="hint-text">{hint}</span>
-          {#if i < questionManager.getHint(attempts, currentQuestion).length - 1},
+    <!-- Question Card -->
+    <div class="question-card">
+      <div class="verb-header">
+        <div class="verb-emoji">{currentQuestion.verb.emoji}</div>
+        <div class="score-badge">⭐ Score: {score}</div>
+        <div class="phase-indicator">Phase {gameState.currentPhase}</div>
+      </div>
+
+      <div class="question-content">
+        {#each currentQuestion.template as part, index}
+          {#if part.type === "input"}
+            <input
+              class="input-field {showHint ? 'hint-field' : ''}"
+              bind:value={userAnswers[part.answerIndex]}
+              placeholder={part.placeholder}
+            />
+          {:else if part.type === "text"}
+            <span class="verb-text">{part.value}</span>
+          {:else if part.type === "separator"}
+            <span class="separator">{part.value}</span>
           {/if}
         {/each}
       </div>
-    {/if}
-  
-    <button on:click={handleSubmit} class="submit-button">
-      {attempts === 0 ? "Check Answer" : "Try Again"} ✅
-    </button>
-  </div>
+
+      {#if showHint}
+        <div class="hint-box">
+          {#each questionManager.getHint(attempts, currentQuestion) as hint, i}
+            <span class="hint-text">{hint}</span>
+            {#if i < questionManager.getHint(attempts, currentQuestion).length - 1},
+            {/if}
+          {/each}
+        </div>
+      {/if}
+
+      <button on:click={handleSubmit} class="submit-button">
+        {attempts === 0 ? "Check Answer" : "Try Again"} ✅
+      </button>
+    </div>
   {/if}
 </div>
-
-<style>
-
-
-</style>
