@@ -2,6 +2,7 @@ export class GameState {
   constructor() {
     this.currentPhase = 1;
     this.score = 0;
+    this.unlockedPhases = [1]; // Start with phase 1 unlocked
     this.storage = typeof localStorage !== 'undefined' ? localStorage : {
       getItem: () => null,
       setItem: () => {}
@@ -13,16 +14,19 @@ export class GameState {
   load() {
     const saved = this.storage.getItem('verbGameState');
     if (saved) {
-      const { phase, score } = JSON.parse(saved);
+      const { phase, score, unlocked } = JSON.parse(saved);
       this.currentPhase = phase;
       this.score = score;
+      this.unlockedPhases = unlocked;
     }
   }
 
   save() {
     this.storage.setItem('verbGameState', JSON.stringify({
       phase: this.currentPhase,
-      score: this.score
+      score: this.score,
+      unlocked: this.unlockedPhases
+
     }));
   }
 
@@ -76,5 +80,12 @@ export class GameState {
       past: verb.displayPast,
       participle: verb.displayParticiple
     };
+  }
+  unlockNextPhase() {
+    const nextPhase = this.currentPhase + 1;
+    if (!this.unlockedPhases.includes(nextPhase)) {
+      this.unlockedPhases = [...this.unlockedPhases, nextPhase];
+      this.save();
+    }
   }
 }
