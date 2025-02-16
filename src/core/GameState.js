@@ -54,6 +54,7 @@ export class GameState {
       this.save();
       return true;
     }
+    this.save();
     return false;
   }
 
