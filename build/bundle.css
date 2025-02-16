@@ -9,7 +9,7 @@ body {
 
 /* Global Styles */
 body {
-  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive, sans-serif;
   background: linear-gradient(135deg, #f6d365, #fda085);
   display: flex;
   justify-content: center;
@@ -242,5 +242,80 @@ body {
   .verb-table .emoji {
     font-size: 1.2rem;
   }
+}
+.main-screen {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.title {
+  font-size: 3rem;
+  color: #ff3e00;
+  margin-bottom: 2rem;
+}
+
+.rules {
+  background: #fff3e0;
+  padding: 1.5rem;
+  border-radius: 10px;
+  margin: 2rem 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.start-button {
+  background: #ff3e00;
+  color: white;
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.start-button:hover {
+  transform: scale(1.05);
+}
+
+.emoji-list {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 2rem 0;
+  font-size: 2rem;
+}
+
+.phase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.phase-button {
+  padding: 1rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.phase-button.unlocked {
+  background: #4CAF50;
+  color: white;
+}
+
+.phase-button.locked {
+  background: #ddd;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.current-score {
+  font-size: 1.5rem;
+  color: #FF9800;
+  margin: 1rem 0;
 }
 
