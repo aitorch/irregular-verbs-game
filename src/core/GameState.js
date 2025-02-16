@@ -2,12 +2,16 @@ export class GameState {
   constructor() {
     this.currentPhase = 1;
     this.score = 0;
+    this.storage = typeof localStorage !== 'undefined' ? localStorage : {
+      getItem: () => null,
+      setItem: () => {}
+    };
     this.phaseVerbs = [];
     this.load();
   }
 
   load() {
-    const saved = localStorage.getItem('verbGameState');
+    const saved = this.storage.getItem('verbGameState');
     if (saved) {
       const { phase, score } = JSON.parse(saved);
       this.currentPhase = phase;
@@ -16,13 +20,14 @@ export class GameState {
   }
 
   save() {
-    localStorage.setItem('verbGameState', JSON.stringify({
+    this.storage.setItem('verbGameState', JSON.stringify({
       phase: this.currentPhase,
       score: this.score
     }));
   }
 
   getPhaseVerbs(allVerbs) {
+    console.log(this.currentPhase)
     const newVerbsStart = (this.currentPhase - 1) * 5;
     const newVerbsEnd = newVerbsStart + 5;
     
@@ -32,7 +37,7 @@ export class GameState {
     // Get 5 random verbs from previous phases
     const previousVerbs = allVerbs.slice(0, newVerbsStart);
     const reviewVerbs = this.getRandomVerbs(previousVerbs, 5);
-    
+    console.log(newVerbs + " " + reviewVerbs)
     return [...newVerbs, ...reviewVerbs].map(verb => this.normalizeVerb(verb));
   }
 

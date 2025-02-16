@@ -61,7 +61,7 @@ export class FillInTheBlanksQuestion {
   }
 
   getHint(attempts, correctAnswers) {
-    const revealedChars = Math.max(0, attempts - 3);
+    const revealedChars = Math.max(0, attempts - 2);
     return correctAnswers.map(answer => {
       // Convert internal underscores back to spaces for display
       const displayAnswer = answer.replace(/_/g, ' ');
