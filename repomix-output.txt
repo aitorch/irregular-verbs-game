@@ -1,0 +1,1587 @@
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+
+================================================================
+File Summary
+================================================================
+
+Purpose:
+--------
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+
+File Format:
+------------
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Multiple file entries, each consisting of:
+  a. A separator line (================)
+  b. The file path (File: path/to/file)
+  c. Another separator line
+  d. The full contents of the file
+  e. A blank line
+
+Usage Guidelines:
+-----------------
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+
+Notes:
+------
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: ./node_modules/**
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+
+Additional Info:
+----------------
+
+================================================================
+Directory Structure
+================================================================
+__mocks__/
+  localStorage.js
+components/
+  App.svelte
+  Game.svelte
+core/
+  question-types/
+    FillInTheBlanksQuestion.js
+    FillInTheBlanksQuestion.test.js
+  GameState.js
+  GameState.test.js
+  QuestionManager.js
+  QuestionManager.test.js
+  verbs.js
+styles/
+  game.css
+main.js
+
+================================================================
+Files
+================================================================
+
+================
+File: __mocks__/localStorage.js
+================
+class LocalStorageMock {
+  constructor() {
+    this.store = {};
+  }
+
+  clear() {
+    this.store = {};
+  }
+
+  getItem(key) {
+    return this.store[key] || null;
+  }
+
+  setItem(key, value) {
+    this.store[key] = String(value);
+  }
+
+  removeItem(key) {
+    delete this.store[key];
+  }
+}
+
+global.localStorage = new LocalStorageMock();
+
+================
+File: components/App.svelte
+================
+<script>
+  import Game from './Game.svelte';
+  import { GameState } from "../core/GameState";
+  let gameStarted = false;
+  let gameState = new GameState();
+let score = gameState.score
+</script>
+
+{#if !gameStarted}
+  <div class="main-screen">
+    <h1 class="title">Verb Master 🌟</h1>
+    
+    <div class="rules">
+      <h2>How to Play:</h2>
+      <ol>
+        <li>Complete each phase by answering verb questions</li>
+        <li>Get points for correct answers</li>
+        <li>Unlock new phases as you progress</li>
+        <li>Use hints after 3 attempts</li>
+      </ol>
+    </div>
+    <div class="score-badge">⭐ Current Score: {score}</div>
+
+    <div class="emoji-list">
+      <span>🏆</span>
+      <span>📚</span>
+      <span>🎯</span>
+      <span>💡</span>
+    </div>
+
+    <button class="start-button" on:click={() => gameStarted = true}>
+      Start Game 🚀
+    </button>
+  </div>
+{:else}
+  <Game />
+{/if}
+
+================
+File: components/Game.svelte
+================
+<script>
+  import '../styles/game.css';
+  import { verbs } from "../core/verbs";
+  import { GameState } from "../core/GameState";
+  import { QuestionManager } from "../core/QuestionManager";
+
+  let gameState = new GameState();
+  let questionManager = new QuestionManager(verbs);
+  let currentQuestion = null;
+  let userAnswers = [];
+  let gameStarted = false;
+  let phaseVerbs = [];
+  let score = 0;
+  let attempts = 0;
+  let showHint = false;
+
+  // Initialize the game properly
+  function initializeGame() {
+    phaseVerbs = gameState.getPhaseVerbs(verbs);
+    gameStarted = false; // Ensure the start phase screen is shown
+    score = gameState.score;
+  }
+
+  function startPhase() {
+    gameStarted = true; // Hide the start phase screen
+    nextQuestion(); // Generate the first question
+  }
+
+  function nextQuestion() {
+    if (phaseVerbs.length === 0) return;
+
+    currentQuestion = questionManager.generateQuestion(phaseVerbs);
+
+    // Count only input fields
+    const inputCount = currentQuestion.template.filter(
+      (p) => p.type === "input",
+    ).length;
+    userAnswers = new Array(inputCount).fill("");
+
+    attempts = 0;
+    showHint = false;
+  }
+
+  function handleSubmit() {
+    attempts++;
+    if (!currentQuestion) {
+      console.error("No current question!");
+      return;
+    }
+
+    const normalizedAnswers = userAnswers.map((a) => a.trim().toLowerCase().replace(/ /g, '_'));
+    console.log("Normalized user answers:", normalizedAnswers); // Debug log
+
+    const isCorrect = questionManager.checkAnswer(
+      normalizedAnswers,
+      currentQuestion,
+    );
+
+    if (isCorrect) {
+      score += calculateScore();
+      gameState.score = score;
+
+      // Check if we should progress to the next phase
+      const shouldProgress = gameState.checkPhaseProgress(score);
+      if (shouldProgress) {
+        initializeGame(); // Reset for the next phase
+      } else {
+        nextQuestion(); // Continue with the current phase
+      }
+    } else {
+      showHint = attempts >= 3;
+    }
+  }
+
+  function calculateScore() {
+    if (attempts === 1) return 10;
+    if (attempts <= 3) return 5;
+    return 3;
+  }
+
+  // Initialize when component mounts
+  initializeGame();
+</script>
+
+<div class="game-container">
+  {#if !gameStarted}
+    <!-- Phase Start Screen -->
+    <div class="phase-start-screen">
+      <h2>Phase {gameState.currentPhase} Verbs 🌟</h2>
+      <table class="verb-table">
+        <thead>
+          <tr>
+            <th>Infinitive</th>
+            <th>Past</th>
+            <th>Participle</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each phaseVerbs as verb}
+            <tr class="verb-item">
+              <td>
+                <span class="emoji">{verb.emoji}</span>
+                <strong>{verb.infinitive}</strong>
+              </td>
+              <td>{verb.past}</td>
+              <td>{verb.participle}</td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+      <button on:click={startPhase} class="start-button">
+        🚀 Start Phase {gameState.currentPhase}
+      </button>
+    </div>
+  {:else if currentQuestion}
+    <!-- Question Card -->
+    <div class="question-card">
+      <div class="verb-header">
+        <div class="verb-emoji">{currentQuestion.verb.emoji}</div>
+        <div class="score-badge">⭐ Score: {score}</div>
+        <div class="phase-indicator">Phase {gameState.currentPhase}</div>
+      </div>
+
+      <div class="question-content">
+        {#each currentQuestion.template as part, index}
+          {#if part.type === "input"}
+            <input
+              class="input-field {showHint ? 'hint-field' : ''}"
+              bind:value={userAnswers[part.answerIndex]}
+              placeholder={part.placeholder}
+            />
+          {:else if part.type === "text"}
+            <span class="verb-text">{part.value}</span>
+          {:else if part.type === "separator"}
+            <span class="separator">{part.value}</span>
+          {/if}
+        {/each}
+      </div>
+
+      {#if showHint}
+        <div class="hint-box">
+          {#each questionManager.getHint(attempts, currentQuestion) as hint, i}
+            <span class="hint-text">{hint}</span>
+            {#if i < questionManager.getHint(attempts, currentQuestion).length - 1},
+            {/if}
+          {/each}
+        </div>
+      {/if}
+
+      <button on:click={handleSubmit} class="submit-button">
+        {attempts === 0 ? "Check Answer" : "Try Again"} ✅
+      </button>
+    </div>
+  {/if}
+</div>
+
+================
+File: core/question-types/FillInTheBlanksQuestion.js
+================
+export class FillInTheBlanksQuestion {
+  getRandomForm() {
+    const forms = ['infinitive', 'past', 'participle'];
+    return forms[Math.floor(Math.random() * forms.length)];
+  }
+
+  generate(verb) {
+    const revealed = this.getRandomForm();
+    const answerForms = ['infinitive', 'past', 'participle'].filter(f => f !== revealed);
+    
+    return {
+      template: this.createTemplate(verb, revealed, answerForms),
+      answers: this.getAnswers(verb, answerForms),
+      verb
+    };
+  }
+
+  createTemplate(verb, revealed) {
+    let answerIndex = 0;
+    return ['infinitive', 'past', 'participle'].flatMap((form, index, arr) => {
+      const elements = [];
+      
+      if (form === revealed) {
+        elements.push({ 
+          type: 'text', 
+          value: verb[`display${form.charAt(0).toUpperCase() + form.slice(1)}`] || verb[form] 
+        });
+      } else {
+        elements.push({
+          type: 'input',
+          placeholder: `${form}`,
+          expected: verb[`${form}Key`] || verb[form],
+          answerIndex: answerIndex++
+        });
+      }
+  
+      if (index < arr.length - 1) {
+        elements.push({ type: 'separator', value: ', ' });
+      }
+  
+      return elements;
+    });
+  }
+  getAnswers(verb, answerForms) {
+    return answerForms.map(form => verb[`${form}Key`]);
+  }
+
+  check(userAnswers, correctAnswers) {
+    try {
+      return userAnswers.every((answer, index) => {
+        // Normalize user input and compare with stored key
+        const normalizedAnswer = answer
+          .trim()
+          .toLowerCase()
+          .replace(/ /g, '_');
+        return normalizedAnswer === correctAnswers[index].toLowerCase();
+      });
+    } catch {
+      return false;
+    }
+  }
+
+  getHint(attempts, correctAnswers) {
+    const revealedChars = Math.max(0, attempts - 2);
+    return correctAnswers.map(answer => {
+      // Convert internal underscores back to spaces for display
+      const displayAnswer = answer.replace(/_/g, ' ');
+      return displayAnswer
+        .split('')
+        .map((char, index) => index < revealedChars ? char : '_')
+        .join('');
+    });
+  }
+}
+
+================
+File: core/question-types/FillInTheBlanksQuestion.test.js
+================
+import { FillInTheBlanksQuestion } from './FillInTheBlanksQuestion';
+
+describe('FillInTheBlanksQuestion', () => {
+  let questionType;
+  const testVerb = {
+    infinitive: 'go',
+    past: 'went',
+    participle: 'gone',
+    infinitiveKey: 'go',
+    pastKey: 'went',
+    participleKey: 'gone'
+  };
+
+  beforeEach(() => {
+    questionType = new FillInTheBlanksQuestion();
+  });
+
+  test('should generate question template', () => {
+    const question = questionType.generate(testVerb);
+    expect(question.template).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: expect.any(String) })
+    ]));
+  });
+
+  test('should validate normalized answers', () => {
+    const question = questionType.generate(testVerb);
+    const normalizedAnswers = question.answers.map(a => a.toLowerCase());
+    
+    expect(questionType.check(normalizedAnswers, question.answers)).toBe(true);
+    expect(questionType.check(['wrong'], question.answers)).toBe(false);
+  });
+});
+
+================
+File: core/GameState.js
+================
+export class GameState {
+  constructor() {
+    this.currentPhase = 1;
+    this.score = 0;
+    this.unlockedPhases = [1]; // Start with phase 1 unlocked
+    this.storage = typeof localStorage !== 'undefined' ? localStorage : {
+      getItem: () => null,
+      setItem: () => {}
+    };
+    this.phaseVerbs = [];
+    this.load();
+  }
+
+  load() {
+    const saved = this.storage.getItem('verbGameState');
+    if (saved) {
+      const { phase, score, unlocked } = JSON.parse(saved);
+      this.currentPhase = phase;
+      this.score = score;
+      this.unlockedPhases = unlocked;
+    }
+  }
+
+  save() {
+    this.storage.setItem('verbGameState', JSON.stringify({
+      phase: this.currentPhase,
+      score: this.score,
+      unlocked: this.unlockedPhases
+
+    }));
+  }
+
+  getPhaseVerbs(allVerbs) {
+    console.log(this.currentPhase)
+    const newVerbsStart = (this.currentPhase - 1) * 5;
+    const newVerbsEnd = newVerbsStart + 5;
+    
+    // Get new verbs for this phase
+    const newVerbs = allVerbs.slice(newVerbsStart, newVerbsEnd);
+    
+    // Get 5 random verbs from previous phases
+    const previousVerbs = allVerbs.slice(0, newVerbsStart);
+    const reviewVerbs = this.getRandomVerbs(previousVerbs, 5);
+    console.log(newVerbs + " " + reviewVerbs)
+    return [...newVerbs, ...reviewVerbs].map(verb => this.normalizeVerb(verb));
+  }
+
+  getRandomVerbs(verbsArray, count) {
+    return [...verbsArray]
+      .sort(() => 0.5 - Math.random())
+      .slice(0, count);
+  }
+
+  checkPhaseProgress(newScore) {
+    const requiredScore = this.currentPhase * 100;
+    if (newScore >= requiredScore) {
+      this.currentPhase++;
+      this.save();
+      return true;
+    }
+    this.save();
+    return false;
+  }
+
+  normalizeVerb(verb) {
+    return {
+      ...verb,
+      infinitiveKey: verb.infinitive.replace(/ /g, '_'),
+      pastKey: verb.past.replace(/ /g, '_'),
+      participleKey: verb.participle.replace(/ /g, '_'),
+      displayInfinitive: verb.infinitive,
+      displayPast: verb.past,
+      displayParticiple: verb.participle
+    };
+  }
+
+  getDisplayForms(verb) {
+    return {
+      infinitive: verb.displayInfinitive,
+      past: verb.displayPast,
+      participle: verb.displayParticiple
+    };
+  }
+  unlockNextPhase() {
+    const nextPhase = this.currentPhase + 1;
+    if (!this.unlockedPhases.includes(nextPhase)) {
+      this.unlockedPhases = [...this.unlockedPhases, nextPhase];
+      this.save();
+    }
+  }
+}
+
+================
+File: core/GameState.test.js
+================
+import { GameState } from './GameState';
+import { verbs } from './verbs';
+
+describe('GameState', () => {
+  let gameState;
+
+  beforeEach(() => {
+    localStorage.clear();
+    gameState = new GameState();
+  });
+
+  test('should initialize with phase 1 and score 0', () => {
+    expect(gameState.currentPhase).toBe(1);
+    expect(gameState.score).toBe(0);
+  });
+
+  test('should load saved state', () => {
+    localStorage.setItem('verbGameState', JSON.stringify({ phase: 3, score: 250 }));
+    const loadedState = new GameState();
+    expect(loadedState.currentPhase).toBe(3);
+    expect(loadedState.score).toBe(250);
+  });
+
+  test('should generate phase verbs with correct structure', () => {
+    let phaseVerbs = gameState.getPhaseVerbs(verbs);
+    expect(phaseVerbs.length).toBe(5);
+    expect(phaseVerbs[0]).toHaveProperty('infinitiveKey');
+    expect(phaseVerbs[0]).toHaveProperty('displayInfinitive');
+    gameState.score = 100;
+    expect(gameState.checkPhaseProgress(100)).toBe(true);
+    expect(gameState.currentPhase).toBe(2);
+    phaseVerbs = gameState.getPhaseVerbs(verbs);
+    expect(phaseVerbs.length).toBe(10);
+
+    
+
+  });
+
+  test('should progress to next phase when score threshold met', () => {
+    gameState.score = 100;
+    expect(gameState.checkPhaseProgress(100)).toBe(true);
+    expect(gameState.currentPhase).toBe(2);
+  });
+});
+
+================
+File: core/QuestionManager.js
+================
+import { FillInTheBlanksQuestion } from './question-types/FillInTheBlanksQuestion';
+
+export class QuestionManager {
+  constructor(verbs) {
+    this.verbs = verbs;
+    this.questionTypes = {
+      'fill-blanks': new FillInTheBlanksQuestion()
+    };
+  }
+
+  generateQuestion(phaseVerbs) {
+    if (!phaseVerbs || phaseVerbs.length === 0) {
+      console.error("No verbs available for question generation!");
+      return null;
+    }
+  
+    const verb = this.getRandomVerb(phaseVerbs);
+    const type = 'fill-blanks';
+    const questionData = this.questionTypes[type].generate(verb);
+  
+    console.log("Generated question data:", questionData); // Debug log
+  
+    return {
+      type,
+      ...questionData,
+      verb
+    };
+  }
+
+  checkAnswer(userAnswers, currentQuestion) {
+    if (!currentQuestion || !currentQuestion.answers) {
+      console.error("Invalid question or answers:", currentQuestion);
+      return false;
+    }
+  
+    console.log("User answers:", userAnswers);
+    console.log("Correct answers:", currentQuestion.answers);
+  
+    try {
+      const isCorrect = userAnswers.every((answer, index) => {
+        const normalizedAnswer = answer.trim().toLowerCase();
+        const correctAnswer = currentQuestion.answers[index].toLowerCase();
+        console.log(`Comparing "${normalizedAnswer}" with "${correctAnswer}"`);
+        return normalizedAnswer === correctAnswer;
+      });
+  
+      console.log("Answer is correct:", isCorrect);
+      return isCorrect;
+    } catch (error) {
+      console.error("Error checking answers:", error);
+      return false;
+    }
+  }
+
+  getHint(attempts, currentQuestion) {
+    if (!currentQuestion || !currentQuestion.type) {
+      console.error("Invalid question object:", currentQuestion);
+      return [];
+    }
+  
+    return this.questionTypes[currentQuestion.type].getHint(
+      attempts,
+      currentQuestion.answers
+    );
+  }
+
+  getRandomVerb(verbs) {
+    return verbs[Math.floor(Math.random() * verbs.length)];
+  }
+}
+
+================
+File: core/QuestionManager.test.js
+================
+import { QuestionManager } from './QuestionManager';
+import { verbs } from './verbs';
+import { GameState } from './GameState';
+
+describe('QuestionManager', () => {
+  let questionManager;
+  let gameState;
+
+  beforeEach(() => {
+    localStorage.clear();
+    questionManager = new QuestionManager(verbs);
+    gameState = new GameState();
+  });
+
+  test('should generate valid question structure', () => {
+    const phaseVerbs = gameState.getPhaseVerbs(verbs);
+    const question = questionManager.generateQuestion(phaseVerbs);
+    
+    expect(question).toHaveProperty('verb');
+    expect(question.template.length).toBeGreaterThan(0);
+    expect(question.answers.length).toBeGreaterThan(0);
+  });
+
+  test('should validate correct answers', () => {
+    const testVerb = {
+      infinitive: 'eat',
+      past: 'ate',
+      participle: 'eaten',
+      infinitiveKey: 'eat',
+      pastKey: 'ate',
+      participleKey: 'eaten'
+    };
+    
+    const question = {
+      answers: ['ate', 'eaten'],
+      type: 'fill-blanks'
+    };
+
+    expect(questionManager.checkAnswer(['ate', 'eaten'], question)).toBe(true);
+    expect(questionManager.checkAnswer(['ate', 'wrong'], question)).toBe(false);
+  });
+
+  test('should generate progressive hints', () => {
+    const question = {
+      answers: ['ate', 'eaten'],
+      type: 'fill-blanks'
+    };
+
+    expect(questionManager.getHint(3, question)).toEqual(['a__', 'e____']);
+    expect(questionManager.getHint(4, question)).toEqual(['at_', 'ea___']);
+  });
+});
+
+================
+File: core/verbs.js
+================
+// src/verbs.js
+export const verbs = [
+  {
+    infinitive: "be",
+    past: "was/were",
+    participle: "been",
+    emoji: "🌟",
+    themeColor: "#FFD700" // Gold
+  },
+  {
+    infinitive: "begin",
+    past: "began",
+    participle: "begun",
+    emoji: "🚀",
+    themeColor: "#FF6B6B" // Coral
+  },
+  {
+    infinitive: "break",
+    past: "broke",
+    participle: "broken",
+    emoji: "💔",
+    themeColor: "#FF69B4" // Hot Pink
+  },
+  {
+    infinitive: "bring",
+    past: "brought",
+    participle: "brought",
+    emoji: "🎁",
+    themeColor: "#FFA07A" // Light Salmon
+  },
+  {
+    infinitive: "build",
+    past: "built",
+    participle: "built",
+    emoji: "🏗️",
+    themeColor: "#CD853F" // Peru
+  },
+  {
+    infinitive: "buy",
+    past: "bought",
+    participle: "bought",
+    emoji: "🛒",
+    themeColor: "#32CD32" // Lime Green
+  },
+  {
+    infinitive: "catch",
+    past: "caught",
+    participle: "caught",
+    emoji: "🎣",
+    themeColor: "#1E90FF" // Dodger Blue
+  },
+  {
+    infinitive: "choose",
+    past: "chose",
+    participle: "chosen",
+    emoji: "✔️",
+    themeColor: "#FFD700" // Gold
+  },
+  {
+    infinitive: "do",
+    past: "did",
+    participle: "done",
+    emoji: "✅",
+    themeColor: "#00CED1" // Dark Turquoise
+  },
+  {
+    infinitive: "draw",
+    past: "drew",
+    participle: "drawn",
+    emoji: "🎨",
+    themeColor: "#FF4500" // Orange Red
+  },
+  {
+    infinitive: "drink",
+    past: "drank",
+    participle: "drunk",
+    emoji: "🥤",
+    themeColor: "#87CEEB" // Sky Blue
+  },
+  {
+    infinitive: "drive",
+    past: "drove",
+    participle: "driven",
+    emoji: "🚗",
+    themeColor: "#FF6347" // Tomato
+  },
+  {
+    infinitive: "eat",
+    past: "ate",
+    participle: "eaten",
+    emoji: "🍔",
+    themeColor: "#FFA500" // Orange
+  },
+  {
+    infinitive: "fall",
+    past: "fell",
+    participle: "fallen",
+    emoji: "🍂",
+    themeColor: "#8B4513" // Saddle Brown
+  },
+  {
+    infinitive: "fall over",
+    past: "fell over",
+    participle: "fallen over",
+    emoji: "🤸",
+    themeColor: "#FF69B4" // Hot Pink
+  },
+  {
+    infinitive: "feed",
+    past: "fed",
+    participle: "fed",
+    emoji: "🍼",
+    themeColor: "#FFDAB9" // Peach Puff
+  },
+  {
+    infinitive: "feel",
+    past: "felt",
+    participle: "felt",
+    emoji: "🤗",
+    themeColor: "#FFC0CB" // Pink
+  },
+  {
+    infinitive: "feel like",
+    past: "felt like",
+    participle: "felt like",
+    emoji: "🤔",
+    themeColor: "#DDA0DD" // Plum
+  },
+  {
+    infinitive: "find",
+    past: "found",
+    participle: "found",
+    emoji: "🔍",
+    themeColor: "#FFD700" // Gold
+  },
+  {
+    infinitive: "find out",
+    past: "found out",
+    participle: "found out",
+    emoji: "🔎",
+    themeColor: "#00CED1" // Dark Turquoise
+  },
+  {
+    infinitive: "fly",
+    past: "flew",
+    participle: "flown",
+    emoji: "✈️",
+    themeColor: "#87CEEB" // Sky Blue
+  },
+  {
+    infinitive: "forget",
+    past: "forgot",
+    participle: "forgotten",
+    emoji: "🧠",
+    themeColor: "#D3D3D3" // Light Gray
+  },
+  {
+    infinitive: "get",
+    past: "got",
+    participle: "got",
+    emoji: "📥",
+    themeColor: "#32CD32" // Lime Green
+  },
+  {
+    infinitive: "get dressed",
+    past: "got dressed",
+    participle: "got dressed",
+    emoji: "👗",
+    themeColor: "#FF69B4" // Hot Pink
+  },
+  {
+    infinitive: "get off",
+    past: "got off",
+    participle: "got off",
+    emoji: "🚪",
+    themeColor: "#FF6347" // Tomato
+  },
+  {
+    infinitive: "get on",
+    past: "got on",
+    participle: "got on",
+    emoji: "🚂",
+    themeColor: "#1E90FF" // Dodger Blue
+  },
+  {
+    infinitive: "get to",
+    past: "got to",
+    participle: "got to",
+    emoji: "📍",
+    themeColor: "#FFA500" // Orange
+  },
+  {
+    infinitive: "get up",
+    past: "got up",
+    participle: "got up",
+    emoji: "⏰",
+    themeColor: "#FFD700" // Gold
+  },
+  {
+    infinitive: "give",
+    past: "gave",
+    participle: "given",
+    emoji: "🎁",
+    themeColor: "#FF69B4" // Hot Pink
+  },
+  {
+    infinitive: "go",
+    past: "went",
+    participle: "gone",
+    emoji: "🚶",
+    themeColor: "#00CED1" // Dark Turquoise
+  },
+  {
+    infinitive: "go out",
+    past: "went out",
+    participle: "gone out",
+    emoji: "🌃",
+    themeColor: "#1E90FF" // Dodger Blue
+  },
+  {
+    infinitive: "go shopping",
+    past: "went shopping",
+    participle: "gone shopping",
+    emoji: "🛍️",
+    themeColor: "#FF69B4" // Hot Pink
+  },
+  {
+    infinitive: "grow",
+    past: "grew",
+    participle: "grown",
+    emoji: "🌱",
+    themeColor: "#32CD32" // Lime Green
+  },
+  {
+    infinitive: "have",
+    past: "had",
+    participle: "had",
+    emoji: "🤲",
+    themeColor: "#FFD700" // Gold
+  },
+  {
+    infinitive: "have to",
+    past: "had to",
+    participle: "had to",
+    emoji: "⏳",
+    themeColor: "#D3D3D3" // Light Gray
+  },
+  {
+    infinitive: "hear",
+    past: "heard",
+    participle: "heard",
+    emoji: "👂",
+    themeColor: "#FF6347" // Tomato
+  },
+  {
+    infinitive: "hide",
+    past: "hid",
+    participle: "hidden",
+    emoji: "🕵️",
+    themeColor: "#8B4513" // Saddle Brown
+  },
+  {
+    infinitive: "hit",
+    past: "hit",
+    participle: "hit",
+    emoji: "👊",
+    themeColor: "#FF4500" // Orange Red
+  },
+  {
+    infinitive: "hold",
+    past: "held",
+    participle: "held",
+    emoji: "🤝",
+    themeColor: "#FFDAB9" // Peach Puff
+  },
+  {
+    infinitive: "know",
+    past: "knew",
+    participle: "known",
+    emoji: "🧠",
+    themeColor: "#D3D3D3" // Light Gray
+  },
+  {
+    infinitive: "learn",
+    past: "learnt",
+    participle: "learnt",
+    emoji: "📚",
+    themeColor: "#FFD700" // Gold
+  },
+  {
+    infinitive: "let",
+    past: "let",
+    participle: "let",
+    emoji: "🛑",
+    themeColor: "#FF6347" // Tomato
+  },
+  {
+    infinitive: "lie",
+    past: "lay",
+    participle: "lain",
+    emoji: "🛌",
+    themeColor: "#87CEEB" // Sky Blue
+  },
+  {
+    infinitive: "lie down",
+    past: "lay down",
+    participle: "lain down",
+    emoji: "🛏️",
+    themeColor: "#1E90FF" // Dodger Blue
+  },
+  {
+    infinitive: "lose",
+    past: "lost",
+    participle: "lost",
+    emoji: "😢",
+    themeColor: "#FF69B4" // Hot Pink
+  },
+  {
+    infinitive: "make",
+    past: "made",
+    participle: "made",
+    emoji: "🔨",
+    themeColor: "#CD853F" // Peru
+  },
+  {
+    infinitive: "mean",
+    past: "meant",
+    participle: "meant",
+    emoji: "💡",
+    themeColor: "#FFD700" // Gold
+  },
+  {
+    infinitive: "meet",
+    past: "met",
+    participle: "met",
+    emoji: "🤝",
+    themeColor: "#32CD32" // Lime Green
+  },
+  {
+    infinitive: "put on",
+    past: "put on",
+    participle: "put on",
+    emoji: "👕",
+    themeColor: "#FF69B4" // Hot Pink
+  },
+  {
+    infinitive: "read",
+    past: "read",
+    participle: "read",
+    emoji: "📖",
+    themeColor: "#FFD700" // Gold
+  },
+  {
+    infinitive: "ride",
+    past: "rode",
+    participle: "ridden",
+    emoji: "🚴",
+    themeColor: "#1E90FF" // Dodger Blue
+  },
+  {
+    infinitive: "run",
+    past: "ran",
+    participle: "run",
+    emoji: "🏃",
+    themeColor: "#FF4500" // Orange Red
+  },
+  {
+    infinitive: "say",
+    past: "said",
+    participle: "said",
+    emoji: "🗣️",
+    themeColor: "#00CED1" // Dark Turquoise
+  },
+  {
+    infinitive: "see",
+    past: "saw",
+    participle: "seen",
+    emoji: "👀",
+    themeColor: "#87CEEB" // Sky Blue
+  },
+  {
+    infinitive: "sell",
+    past: "sold",
+    participle: "sold",
+    emoji: "💰",
+    themeColor: "#FFD700" // Gold
+  },
+  {
+    infinitive: "send",
+    past: "sent",
+    participle: "sent",
+    emoji: "📤",
+    themeColor: "#1E90FF" // Dodger Blue
+  },
+  {
+    infinitive: "sing",
+    past: "sang",
+    participle: "sung",
+    emoji: "🎤",
+    themeColor: "#FF69B4" // Hot Pink
+  },
+  {
+    infinitive: "sit",
+    past: "sat",
+    participle: "sat",
+    emoji: "🪑",
+    themeColor: "#8B4513" // Saddle Brown
+  },
+  {
+    infinitive: "sleep",
+    past: "slept",
+    participle: "slept",
+    emoji: "😴",
+    themeColor: "#87CEEB" // Sky Blue
+  },
+  {
+    infinitive: "smell like",
+    past: "smelt like",
+    participle: "smelt like",
+    emoji: "👃",
+    themeColor: "#FF69B4" // Hot Pink
+  },
+  {
+    infinitive: "speak",
+    past: "spoke",
+    participle: "spoken",
+    emoji: "🗣️",
+    themeColor: "#00CED1" // Dark Turquoise
+  },
+  {
+    infinitive: "spell",
+    past: "spelt",
+    participle: "spelt",
+    emoji: "🔠",
+    themeColor: "#FFD700" // Gold
+  },
+  {
+    infinitive: "spend",
+    past: "spent",
+    participle: "spent",
+    emoji: "💸",
+    themeColor: "#32CD32" // Lime Green
+  },
+  {
+    infinitive: "stand",
+    past: "stood",
+    participle: "stood",
+    emoji: "🧍",
+    themeColor: "#8B4513" // Saddle Brown
+  },
+  {
+    infinitive: "steal",
+    past: "stole",
+    participle: "stolen",
+    emoji: "🦹",
+    themeColor: "#FF6347" // Tomato
+  },
+  {
+    infinitive: "swim",
+    past: "swam",
+    participle: "swum",
+    emoji: "🏊",
+    themeColor: "#1E90FF" // Dodger Blue
+  },
+  {
+    infinitive: "swing",
+    past: "swung",
+    participle: "swung",
+    emoji: "🪀",
+    themeColor: "#FF69B4" // Hot Pink
+  },
+  {
+    infinitive: "take",
+    past: "took",
+    participle: "taken",
+    emoji: "✋",
+    themeColor: "#FFD700" // Gold
+  },
+  {
+    infinitive: "take a photo",
+    past: "took a photo",
+    participle: "taken a photo",
+    emoji: "📸",
+    themeColor: "#00CED1" // Dark Turquoise
+  },
+  {
+    infinitive: "take off",
+    past: "took off",
+    participle: "taken off",
+    emoji: "✈️",
+    themeColor: "#87CEEB" // Sky Blue
+  },
+  {
+    infinitive: "teach",
+    past: "taught",
+    participle: "taught",
+    emoji: "👩‍🏫",
+    themeColor: "#FF69B4" // Hot Pink
+  },
+  {
+    infinitive: "tell",
+    past: "told",
+    participle: "told",
+    emoji: "🗨️",
+    themeColor: "#00CED1" // Dark Turquoise
+  },
+  {
+    infinitive: "think",
+    past: "thought",
+    participle: "thought",
+    emoji: "🤔",
+    themeColor: "#D3D3D3" // Light Gray
+  },
+  {
+    infinitive: "throw",
+    past: "threw",
+    participle: "thrown",
+    emoji: "⚾",
+    themeColor: "#FF4500" // Orange Red
+  },
+  {
+    infinitive: "understand",
+    past: "understood",
+    participle: "understood",
+    emoji: "🧠",
+    themeColor: "#1E90FF" // Dodger Blue
+  },
+  {
+    infinitive: "wake up",
+    past: "woke up",
+    participle: "woken up",
+    emoji: "⏰",
+    themeColor: "#FFD700" // Gold
+  },
+  {
+    infinitive: "wear",
+    past: "wore",
+    participle: "worn",
+    emoji: "👕",
+    themeColor: "#FF69B4" // Hot Pink
+  },
+  {
+    infinitive: "win",
+    past: "won",
+    participle: "won",
+    emoji: "🏆",
+    themeColor: "#FFD700" // Gold
+  },
+  {
+    infinitive: "write",
+    past: "wrote",
+    participle: "written",
+    emoji: "✍️",
+    themeColor: "#8B4513" // Saddle Brown
+  }
+];
+
+================
+File: styles/game.css
+================
+/* Ensure html and body take up full height */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+}
+
+/* Global Styles */
+body {
+  font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive, sans-serif;
+  background: linear-gradient(135deg, #f6d365, #fda085);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Game Container */
+.game-container {
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  max-width: 90%;
+  width: 500px;
+  text-align: center;
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+/* Phase Start Screen */
+.phase-start-screen {
+  background: white;
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+/* Verb Table - Fixed Alignment */
+.verb-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  table-layout: fixed; /* Ensures consistent column widths */
+}
+
+.verb-table th,
+.verb-table td {
+  padding: 0.75rem;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+.verb-table th {
+  background: #ff6f61;
+  color: white;
+  font-size: 1.1rem;
+}
+
+/* Removed flex from table rows */
+.verb-item {
+  /* Removed display:flex and related properties */
+}
+
+.emoji {
+  font-size: 1.5rem;
+  margin-right: 0.5rem;
+  vertical-align: middle; /* Aligns emoji with text */
+}
+
+.start-button {
+  background: #4caf50;
+  color: white;
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.start-button:hover {
+  background: #45a049;
+}
+
+/* Question Card */
+.question-card {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 15px;
+  border: 4px solid #ff6f61;
+  box-shadow: 0 5px 15px rgba(255, 111, 97, 0.3);
+}
+
+.verb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.verb-emoji {
+  font-size: 3rem;
+}
+
+.score-badge {
+  background: #4caf50;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 1.2rem;
+}
+
+.phase-indicator {
+  background: #4caf50;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 1rem;
+  margin-left: 1rem;
+}
+
+/* Question Content */
+.question-content {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Input Fields */
+.input-field {
+  font-size: 1rem;
+  padding: 0.5rem;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  width: 100px;
+  max-width: 100px;
+  transition: border-color 0.3s;
+}
+
+.input-field:focus {
+  border-color: #ff6f61;
+  outline: none;
+}
+
+.verb-text,
+.separator {
+  font-size: 1.2rem;
+  white-space: nowrap;
+}
+
+.submit-button {
+  background: #ff6f61;
+  color: white;
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.submit-button:hover {
+  background: #ff4a3d;
+}
+
+.hint-box {
+  background: #fff3e0;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-top: 1rem;
+  border: 2px dashed #ff6f61;
+}
+
+.hint-text {
+  font-size: 1.2rem;
+  color: #333;
+  font-weight: bold;
+}
+
+.hint-field {
+  background: #fff3e0;
+  border: 2px dashed #ff6f61;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  .game-container {
+    padding: 1rem;
+    max-height: 95vh;
+  }
+
+  .question-card {
+    padding: 1rem;
+  }
+
+  .question-content {
+    gap: 0.3rem;
+  }
+
+  .input-field {
+    width: 80px;
+    max-width: 80px;
+    font-size: 0.9rem;
+    padding: 0.4rem;
+  }
+
+  .verb-text,
+  .separator {
+    font-size: 1rem;
+  }
+
+  .submit-button {
+    font-size: 1rem;
+    padding: 0.8rem 1.5rem;
+  }
+
+  .hint-box {
+    padding: 0.8rem;
+  }
+
+  .hint-text {
+    font-size: 1rem;
+  }
+
+  .verb-table th,
+  .verb-table td {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .verb-table .emoji {
+    font-size: 1.2rem;
+  }
+}
+.main-screen {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.title {
+  font-size: 3rem;
+  color: #ff3e00;
+  margin-bottom: 2rem;
+}
+
+.rules {
+  background: #fff3e0;
+  padding: 1.5rem;
+  border-radius: 10px;
+  margin: 2rem 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.start-button {
+  background: #ff3e00;
+  color: white;
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.start-button:hover {
+  transform: scale(1.05);
+}
+
+.emoji-list {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 2rem 0;
+  font-size: 2rem;
+}
+
+.phase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.phase-button {
+  padding: 1rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.phase-button.unlocked {
+  background: #4CAF50;
+  color: white;
+}
+
+.phase-button.locked {
+  background: #ddd;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.current-score {
+  font-size: 1.5rem;
+  color: #FF9800;
+  margin: 1rem 0;
+}
+
+================
+File: main.js
+================
+import App from './components/App.svelte';
+
+const app = new App({
+	target: document.body,
+	props: {
+		name: 'world'
+	}
+});
+
+export default app;
+
+
+
+================================================================
+End of Codebase
+================================================================

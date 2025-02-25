@@ -1,9 +1,11 @@
 <script>
   import Game from './Game.svelte';
+  import VerbList from './VerbList.svelte'; // Import the new component
   import { GameState } from "../core/GameState";
   let gameStarted = false;
+  let showVerbList = false; // State to control visibility of verb list
   let gameState = new GameState();
-let score = gameState.score
+  let score = gameState.score;
 </script>
 
 {#if !gameStarted}
@@ -31,6 +33,16 @@ let score = gameState.score
     <button class="start-button" on:click={() => gameStarted = true}>
       Start Game 🚀
     </button>
+
+    <!-- New button to show verb list -->
+    <button class="start-button" on:click={() => showVerbList = !showVerbList}>
+      {showVerbList ? 'Hide Verb List' : 'Show Verb List'} 📚
+    </button>
+
+    <!-- Conditionally render the verb list -->
+    {#if showVerbList}
+      <VerbList />
+    {/if}
   </div>
 {:else}
   <Game />
