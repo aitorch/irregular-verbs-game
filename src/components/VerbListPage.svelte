@@ -1,9 +1,16 @@
 <script>
   import { verbs } from "../core/verbs";
+  import { push } from "svelte-spa-router"; // Use `push` instead of `navigate`
+
+  // Function to go back to the main screen
+  function goBack() {
+    push("/"); // Use `push` to navigate back
+  }
 </script>
 
-<div class="verb-list-container">
-  <h2>Full List of Verb Forms</h2>
+<div class="verb-list-page">
+  <h1>Full List of Verb Forms</h1>
+  <button on:click={goBack} class="back-button">⬅️ Back to Main Screen</button>
   <div class="verb-list-scrollable">
     <table class="verb-table">
       <thead>
@@ -32,20 +39,30 @@
 </div>
 
 <style>
-  .verb-list-container {
-    margin-top: 2rem;
-    background: white;
-    padding: 1.5rem;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    width: 100%;
+  .verb-list-page {
+    text-align: center;
+    padding: 2rem;
     max-width: 800px;
-    margin-left: auto;
-    margin-right: auto;
+    margin: 0 auto;
+  }
+
+  .back-button {
+    background: #ff6f61;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+  }
+
+  .back-button:hover {
+    background: #ff4a3d;
   }
 
   .verb-list-scrollable {
-    max-height: 400px; /* Adjust this value as needed */
+    max-height: 70vh;
     overflow-y: auto;
     border: 1px solid #eee;
     border-radius: 8px;
@@ -72,7 +89,7 @@
     color: white;
     font-size: 1.1rem;
     position: sticky;
-    top: 0; /* Makes the header sticky */
+    top: 0;
     z-index: 1;
   }
 
